@@ -1,0 +1,104 @@
+{
+  "workflows": [
+    {
+      "name": "Local Development Workflow",
+      "description": "Deploys the Online Boutique microservices to a local Kubernetes cluster (e.g., Minikube, Kind, Docker Desktop) using Skaffold, enabling hot reloading for development changes.",
+      "input": "CLI: skaffold dev; Prerequisites: Local K8s cluster running, Docker installed",
+      "output": "Deployed pods and services; Access via kubectl port-forward deployment/frontend 8080:8080; Hot reload on code changes",
+      "entry_point": "skaffold dev",
+      "relevant_files": [
+        "skaffold.yaml",
+        "kubernetes-manifests/",
+        "src/*/Dockerfile"
+      ],
+      "doc": ".exp/design-workflow-1-local-development-workflow.md"
+    },
+    {
+      "name": "GKE Deployment Workflow",
+      "description": "Deploys the microservices to a Google Kubernetes Engine (GKE) cluster using Skaffold, building and pushing images to Artifact Registry.",
+      "input": "CLI: skaffold run --default-repo=<registry>; Env: gcloud auth, PROJECT_ID; Prerequisites: GKE cluster, Artifact Registry repo",
+      "output": "Deployed to GKE; External IP for frontend via kubectl get service frontend-external",
+      "entry_point": "skaffold run --default-repo=us-docker.pkg.dev/PROJECT_ID/microservices-demo",
+      "relevant_files": [
+        "skaffold.yaml",
+        "kubernetes-manifests/",
+        "cloudbuild.yaml"
+      ],
+      "doc": ".exp/design-workflow-2-gke-deployment-workflow.md"
+    },
+    {
+      "name": "Helm Chart Deployment",
+      "description": "Deploys the application using the provided Helm chart, supporting custom values for different configurations like databases or service mesh.",
+      "input": "CLI: helm upgrade --install onlineboutique oci://... ; Custom values via --set or values.yaml",
+      "output": "Helm release deployed; Services and deployments managed by Helm",
+      "entry_point": "helm-chart/Chart.yaml",
+      "relevant_files": [
+        "helm-chart/",
+        "helm-chart/values.yaml"
+      ],
+      "doc": ".exp/design-workflow-3.md"
+    },
+    {
+      "name": "Kustomize Customization and Deployment",
+      "description": "Customizes Kubernetes manifests using Kustomize components (e.g., Istio, Memorystore, network policies) and deploys to a cluster.",
+      "input": "Edit kustomize/kustomization.yaml to add components; CLI: kubectl apply -k kustomize/",
+      "output": "Customized manifests applied to cluster",
+      "entry_point": "kustomize/kustomization.yaml",
+      "relevant_files": [
+        "kustomize/",
+        "kustomize/components/"
+      ],
+      "doc": ".exp/design-workflow-4.md"
+    },
+    {
+      "name": "Terraform Infrastructure Provisioning",
+      "description": "Provisions a GKE cluster and optional Memorystore for Redis using Terraform, then deploys the application.",
+      "input": "terraform.tfvars with gcp_project_id, memorystore=true/false; CLI: terraform init; terraform apply",
+      "output": "GKE cluster created; Deploy app separately (e.g., with Skaffold)",
+      "entry_point": "terraform/main.tf",
+      "relevant_files": [
+        "terraform/*.tf",
+        "terraform/terraform.tfvars"
+      ],
+      "doc": ".exp/design-workflow-5.md"
+    },
+    {
+      "name": "Cloud Build CI/CD Pipeline",
+      "description": "Automates building Docker images and deploying to a GKE cluster using Google Cloud Build and Skaffold.",
+      "input": "CLI: gcloud builds submit --config=cloudbuild.yaml --substitutions=_ZONE=...,_CLUSTER=... ",
+      "output": "Images built/pushed; App deployed to specified GKE cluster",
+      "entry_point": "cloudbuild.yaml",
+      "relevant_files": [
+        "cloudbuild.yaml",
+        "skaffold.yaml"
+      ],
+      "doc": ".exp/design-workflow-6.md"
+    },
+    {
+      "name": "Release Process",
+      "description": "Creates a new release version: builds tagged images, updates manifests, creates Git tag and PR, publishes release.",
+      "input": "Env: TAG=vX.Y.Z, REPO_PREFIX=..., PROJECT_ID=... ; CLI: ./docs/releasing/make-release.sh",
+      "output": "Docker images tagged and pushed; Updated release manifests; GitHub release and PR",
+      "entry_point": "docs/releasing/make-release.sh",
+      "relevant_files": [
+        "docs/releasing/*.sh",
+        "release/*.yaml"
+      ],
+      "doc": ".exp/design-workflow-7.md"
+    },
+    {
+      "name": "Adding New Microservice",
+      "description": "Integrates a new microservice into the Online Boutique demo by adding source code, Dockerfiles, manifests, and updating build/deploy configs.",
+      "input": "Follow steps in docs/adding-new-microservice.md; New service directory under src/",
+      "output": "New service deployable via Skaffold/Helm/Kustomize",
+      "entry_point": "src/<new-service>/",
+      "relevant_files": [
+        "docs/adding-new-microservice.md",
+        "skaffold.yaml",
+        "kustomize/kustomization.yaml",
+        "helm-chart/"
+      ],
+      "doc": ".exp/design-workflow-8.md"
+    }
+  ]
+}
