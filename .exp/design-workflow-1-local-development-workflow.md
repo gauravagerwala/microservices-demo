@@ -79,8 +79,9 @@ During development, Skaffold monitors file changes in build contexts. Upon detec
 ### Build Process Details
 - **Platforms**: Supports `linux/amd64` and `linux/arm64` for multi-arch builds.
 - **Local Build**: Uses `local` builder with `useDockerCLI: true` and `useBuildkit: true` for fast, cached builds without pushing to a registry.
+- **Docker Bake**: The `docker-bake.hcl` file enables building all service images simultaneously for multiple platforms using `docker buildx bake -f docker-bake.hcl`, complementing Skaffold for batch builds.
 - **Dependencies**: Some services require proto generation (via `genproto.sh` scripts); generated files (e.g., `demo.pb.go`) are included in source trees and built into images. Changes to `.proto` files may require manual regeneration before rebuild.
-- **Load Generator**: Handled via a separate Skaffold config requiring the main 'app' config, ensuring it's deployed alongside services.
+- **Load Generator**: Handled via a separate Skaffold config requiring the main 'app' config, ensuring it's deployed alongside services, with explicit multi-platform support.
 
 ### Deployment and Runtime
 - **Manifest Updates**: Skaffold replaces image tags in manifests during deploy.
