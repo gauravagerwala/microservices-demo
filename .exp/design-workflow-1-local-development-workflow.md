@@ -21,7 +21,7 @@ The workflow is initiated by running `skaffold dev` from the project root. Acces
 
 - **Skaffold**: The core orchestrator defined in `skaffold.yaml`. It specifies build artifacts (one per microservice, with build contexts in `src/<service>`), manifest paths (`kubernetes-manifests/` processed via Kustomize), and deployment via `kubectl`. Supports multiple configs (main 'app' and 'loadgenerator') and profiles for customization.
   
-- **Dockerfiles**: Service-specific Dockerfiles in `src/<service>/Dockerfile` (e.g., multi-stage Go builds for Go services, Node.js for JS services). Skaffold builds these locally using Docker CLI and Buildkit for efficiency.
+- **Dockerfiles**: Service-specific Dockerfiles in `src/<service>/Dockerfile` (e.g., multi-stage Go builds for Go services, Node.js v24.11.0-alpine (LTS) for JS services like currencyservice and paymentservice). Skaffold builds these locally using Docker CLI and Buildkit for efficiency.
 
 - **Kubernetes Manifests**: YAML files in `kubernetes-manifests/` defining Deployments, Services, Pods, etc., for all 11 microservices, Redis (cart store), and loadgenerator. Image references (e.g., `image: frontend`) are updated by Skaffold with generated tags.
 
@@ -45,7 +45,7 @@ sequenceDiagram
     S->>S: Load skaffold.yaml (artifacts, manifests)
     loop For each artifact
         S->>B: docker build -t <image>:<tag> src/<service>
-        B->>B: Build image from Dockerfile
+        B->>B: Build image from Dockerfile (updated to Node.js v24.11.0-alpine for currencyservice & paymentservice)
     end
     S->>K: kustomize build kubernetes-manifests/ | kubectl apply -f -
     K->>K: Create Deployments, Services, Pods
@@ -66,7 +66,7 @@ sequenceDiagram
     participant K as K8s Cluster
     Note over S: File change detected in watched dir (e.g., src/frontend)
     S->>B: Rebuild affected image(s)
-    B->>B: docker build -t <image>:new-tag
+    B->>B: docker build -t <image>:new-tag (Node v24 for updated services)
     S->>K: kubectl apply updated manifests (with new image tag)
     K->>K: Rolling update pods with new image
     Note over Dev: Code changes reflected without manual intervention
