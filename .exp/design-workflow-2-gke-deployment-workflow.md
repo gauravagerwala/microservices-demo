@@ -17,7 +17,7 @@ Post-deployment, the frontend is accessible via the external IP of the `frontend
 ## Components
 
 - **Skaffold**: Core orchestrator handling build-push-deploy cycle. Configured for multi-platform builds (linux/amd64, linux/arm64), local Docker/Buildkit, or Google Cloud Build via profiles.
-- **Dockerfiles**: Service-specific in `src/<service>/`, e.g., multi-stage builds for Java (adservice), Go (frontend), Node.js (currencyservice), etc.
+- **Dockerfiles**: Service-specific in `src/<service>/`, e.g., multi-stage builds for Java (adservice), Go (frontend), Node.js v24.11.0-alpine (LTS) (currencyservice, paymentservice), etc.
 - **Container Registry**: Stores built images; specified via `--default-repo` (e.g., `us-docker.pkg.dev/PROJECT_ID/microservices-demo`).
 - **Kustomize**: Renders manifests from `kubernetes-manifests/`, allowing patches for image tags and optional components (e.g., Redis, Istio commented out).
 - **Kubernetes Resources**: Deployments, Services, ConfigMaps, etc., for 10+ microservices plus Redis. LoadGenerator deployed separately via Skaffold module.
@@ -39,7 +39,7 @@ sequenceDiagram
     U->>S: skaffold run --default-repo=<registry>
     Note over S: Parse skaffold.yaml<br/>Configs: app, loadgenerator
     loop For each service artifact
-        S->>B: Build image from src/<service>/Dockerfile
+        S->>B: Build image from src/<service>/Dockerfile (Node v24 for currencyservice, paymentservice)
         B->>B: Use local Docker or GCB profile
         B->>R: Tag & push <registry>/<service>:<tag>
     end

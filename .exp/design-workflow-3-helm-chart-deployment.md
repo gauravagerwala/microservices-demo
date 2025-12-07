@@ -107,7 +107,7 @@ Once deployed, information flows as per the system architecture (see project-ove
 Helm manages upgrades, rollouts, and hooks if defined (none explicit in current chart).
 
 ### Integration with Codebase
-- Builds on `kubernetes-manifests/` and `src/*/Dockerfile` for images.
+- Builds on `kubernetes-manifests/` and `src/*/Dockerfile` (with Node.js v24.11.0-alpine for JS services) for images.
 - Aligns with Kustomize components (e.g., `network-policies/`, `service-mesh-istio/`) via equivalent value flags.
 - Can be used post-Terraform infrastructure provisioning (#5) or with CI/CD via Cloud Build (#6) for automated releases.
 - Release process (#7) may update/publish the chart to OCI registry.
