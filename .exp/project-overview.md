@@ -30,7 +30,7 @@ Deployment is Kubernetes-centric:
 - Helm chart in `helm-chart/` for templated installs.
 - Kustomize in `kustomize/` for base + overlays (e.g., service mesh, network policies, custom branding, Google Cloud integrations).
 - Skaffold (`skaffold.yaml`) for local development and hot-reloading.
-- Terraform (`terraform/`) for provisioning infrastructure like Memorystore.
+- Terraform (`terraform/` and `.github/terraform/`) for provisioning infrastructure like Memorystore (user envs) and GKE clusters for CI/production.
 - Optional Istio manifests for service mesh.
 - Release artifacts in `release/` for pre-built YAMLs.
 
