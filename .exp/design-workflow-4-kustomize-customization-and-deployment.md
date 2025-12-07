@@ -18,7 +18,7 @@ The design supports extensibility: new components can be added following Kustomi
 ### Base Layer
 - **Location**: `kustomize/base/`
 - **Contents**: Individual YAML files for each microservice (e.g., `frontend.yaml`, `cartservice.yaml`) defining Deployments, Services, ConfigMaps, etc. The `base/kustomization.yaml` aggregates these as resources.
-- **Role**: Provides the default, vanilla deployment of Online Boutique services, including in-cluster Redis for carts and public frontend exposure.
+- **Role**: Provides the default, vanilla deployment of Online Boutique services, including in-cluster Redis for carts and public frontend exposure. The loadgenerator service now supports environment variables `FRONTEND_PROTO` (default: "http") and `FRONTEND_ADDR` to customize the protocol and address used for load testing the frontend, enabling scenarios like HTTPS ingress (via PR #2775 updating src/loadgenerator/Dockerfile). Components or direct patches can set these env vars in the loadgenerator Deployment.
 
 ### Top-Level Configuration
 - **File**: `kustomize/kustomization.yaml`
@@ -105,15 +105,18 @@ flowchart TD
     Comp1["Example: Cymbal Branding Component<br/>Patches frontend env vars"]
     Comp2["Example: Service Mesh Istio<br/>Adds Istio resources, patches"]
     Comp3["Example: Database (e.g., Spanner)<br/>Patches cartservice config"]
+    CompLG["Example: Loadgenerator Customization (new)<br/>Patches loadgenerator Deployment with FRONTEND_PROTO and FRONTEND_ADDR env vars for custom protocol (e.g., https)"]
     Final["Final Customized Manifests<br/>Ready for kubectl apply"]
 
     Base --> Comp1
     Comp1 --> Comp2
     Comp2 --> Comp3
-    Comp3 --> Final
+    Comp3 --> CompLG
+    CompLG --> Final
 
     style Base fill:#f9f
     style Final fill:#bbf
+    style CompLG fill:#90ee90
 ```
 
 ## Additional Design Aspects

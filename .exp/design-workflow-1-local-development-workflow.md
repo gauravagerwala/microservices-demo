@@ -23,7 +23,7 @@ The workflow is initiated by running `skaffold dev` from the project root. Acces
   
 - **Dockerfiles**: Service-specific Dockerfiles in `src/<service>/Dockerfile` (e.g., multi-stage Go builds for Go services, Node.js for JS services). Skaffold builds these locally using Docker CLI and Buildkit for efficiency.
 
-- **Kubernetes Manifests**: YAML files in `kubernetes-manifests/` defining Deployments, Services, Pods, etc., for all 11 microservices, Redis (cart store), and loadgenerator. Image references (e.g., `image: frontend`) are updated by Skaffold with generated tags.
+- **Kubernetes Manifests**: YAML files in `kubernetes-manifests/` defining Deployments, Services, Pods, etc., for all 11 microservices, Redis (cart store), and loadgenerator. The loadgenerator now supports `FRONTEND_PROTO` (default: http) and `FRONTEND_ADDR` environment variables to allow customizing the protocol and address for load testing the frontend (e.g., https for secure setups), as updated in src/loadgenerator/Dockerfile by PR #2775. Image references (e.g., `image: frontend`) are updated by Skaffold with generated tags.
 
 - **Kustomize**: Used by Skaffold to build manifests, allowing bases and patches (e.g., via profiles adding components like network policies).
 
@@ -47,9 +47,11 @@ sequenceDiagram
         S->>B: docker build -t <image>:<tag> src/<service>
         B->>B: Build image from Dockerfile
     end
+    Note over B: Loadgenerator image now supports FRONTEND_PROTO env var for custom protocol (PR #2775)
     S->>K: kustomize build kubernetes-manifests/ | kubectl apply -f -
     K->>K: Create Deployments, Services, Pods
     Note over S,K: Pods pull local images and start
+    Note over K: Loadgenerator configurable via FRONTEND_PROTO, FRONTEND_ADDR env vars in manifests
     D->>K: kubectl port-forward svc/frontend 8080:8080
     Note over D: Access app at http://localhost:8080
 ```

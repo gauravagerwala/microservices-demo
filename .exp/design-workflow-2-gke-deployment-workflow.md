@@ -37,17 +37,19 @@ sequenceDiagram
     participant K as Kustomize
     participant C as GKE Cluster (kubectl)
     U->>S: skaffold run --default-repo=<registry>
-    Note over S: Parse skaffold.yaml<br/>Configs: app, loadgenerator
+    Note over S: Parse skaffold.yaml<br/>Configs: app, loadgenerator (now supports protocol customization)
     loop For each service artifact
         S->>B: Build image from src/<service>/Dockerfile
         B->>B: Use local Docker or GCB profile
         B->>R: Tag & push <registry>/<service>:<tag>
     end
+    Note over B: Loadgenerator image includes support for FRONTEND_PROTO env var (PR #2775)
     Note over S: Update image tags in manifests
     S->>K: kustomize build kubernetes-manifests/
     K->>C: kubectl apply -f rendered.yaml
     C->>C: Deploy pods, services, etc.
     Note over C: Includes Redis if not customized
+    Note over C: Loadgenerator configurable for https via env vars (PR #2775)
     U->>C: kubectl get service frontend-external
     C->>U: External IP for access
 ```
@@ -85,7 +87,7 @@ sequenceDiagram
 - **Profiles in Skaffold**: Activate via `-p <profile>`, e.g., `-p gcb` for remote builds, `-p network-policies` to patch manifests with additional Kustomize paths.
 - **Kustomize Overlays**: Uncomment or add components in `kubernetes-manifests/kustomization.yaml` for features like service mesh (Istio), alternative databases (AlloyDB/Spanner), or observability (Cloud Operations).
 - **Image Tagging**: Git commit-based for traceability; customizable via `tagPolicy` in `skaffold.yaml`.
-- **Load Generator**: Separate Skaffold config (`loadgenerator`) requiring `app`; deploys `loadgenerator.yaml` manifest.
+- **Load Generator**: Separate Skaffold config (`loadgenerator`) requiring `app`; deploys `loadgenerator.yaml` manifest. Supports `FRONTEND_PROTO` (default: http) and `FRONTEND_ADDR` env vars to customize protocol for frontend load testing (e.g., https for ingress), updated in Dockerfile by PR #2775.
 - **Multi-Architecture**: Builds for amd64 and arm64, useful for GKE Autopilot or diverse node pools.
 
 ### Error Handling and Best Practices
