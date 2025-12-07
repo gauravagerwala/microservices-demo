@@ -40,7 +40,7 @@ sequenceDiagram
     Note over S: Parse skaffold.yaml<br/>Configs: app, loadgenerator
     loop For each service artifact
         S->>B: Build image from src/<service>/Dockerfile
-        B->>B: Use local Docker or GCB profile
+        B->>B: Use local Docker or GCB profile (e.g., for loadgenerator: pip install incl. werkzeug>=3.1.4 post-PR #3171)
         B->>R: Tag & push <registry>/<service>:<tag>
     end
     Note over S: Update image tags in manifests
@@ -66,7 +66,7 @@ sequenceDiagram
     participant C as GKE Cluster
     U->>CB: gcloud builds submit --config=cloudbuild.yaml --substitutions=_ZONE=...,_CLUSTER=...
     CB->>S: Run steps: get-credentials, skaffold run --default-repo=gcr.io/$PROJECT_ID
-    S->>B: Build images (remote)
+    S->>B: Build images (remote)<br/>(e.g., loadgenerator pip install werkzeug==3.1.4 post-PR #3171)
     B->>R: Push images
     S->>C: kubectl apply manifests
     C->>CB: Deployment status
