@@ -32,7 +32,7 @@ The chart is marked as experimental in the README, encouraging feedback via GitH
 - **README.md**: Provides basic and advanced installation examples, links to blog posts on advanced scenarios (e.g., Spanner integration, gRPC health probes).
 
 ### Deployed Resources
-- **Core**: Deployments and Services for 11 microservices (adService, cartService, etc.) + loadGenerator.
+- **Core**: Deployments and Services for 11 microservices (adService, cartService, etc.) + loadGenerator (configurable via Helm values for FRONTEND_PROTO and FRONTEND_ADDR to support custom protocols like https, per PR #2775).
 - **Optional**:
   - In-cluster Redis StatefulSet if `cartDatabase.inClusterRedis.create: true`.
   - NetworkPolicies per service if enabled.
@@ -55,14 +55,15 @@ sequenceDiagram
     U->>H: helm upgrade --install [options] [values overrides]
     H->>H: Load chart from OCI registry or local path
     H->>H: Merge default values.yaml with user overrides
-    H->>H: Render templates (e.g., service Deployments, conditional policies)
+    H->>H: Render templates (e.g., service Deployments, conditional policies incl. loadgenerator env)
     H->>S: Apply rendered YAMLs (e.g., Deployments, Services, Redis if enabled)
     S->>R: Create/Update Kubernetes objects
     S->>R: Schedule Pods, pull images, run init containers if needed
-    Note over R: Microservices start; gRPC health checks; inter-service communication begins
-    R->>S: Pods become ready; Services get endpoints
+    Note over R: Microservices start, gRPC health checks, inter-service communication begins, loadgenerator supports custom protocol (PR #2775)
+    R->>S: Pods become ready, Services get endpoints
+    Note over R: Loadgenerator configurable via FRONTEND_PROTO value
     S->>H: Confirmation of resource creation
-    H->>U: Helm release status (success/failure); NOTES for frontend access
+    H->>U: Helm release status (success/failure), NOTES for frontend access
 ```
 
 ### Component Creation Flowchart

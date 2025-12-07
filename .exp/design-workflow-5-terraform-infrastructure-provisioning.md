@@ -44,7 +44,7 @@ This workflow is particularly useful for quickly spinning up a production-like e
 ### Application Deployment Components
 - **Kustomize (`kustomize/`)**: 
   - `kustomization.yaml`: References base manifests and enabled components.
-  - `base/`: Kubernetes YAMLs for all 11 microservices + loadgenerator and in-cluster Redis.
+  - `base/`: Kubernetes YAMLs for all 11 microservices + loadgenerator (supports FRONTEND_PROTO and FRONTEND_ADDR env vars for custom frontend targeting, PR #2775) and in-cluster Redis.
   - `components/memorystore/`: Patches cartservice Deployment (sets REDIS_ADDR env), deletes in-cluster Redis resources.
 - **Local Executions**: 
   - `gcloud` module: Fetches cluster credentials.
