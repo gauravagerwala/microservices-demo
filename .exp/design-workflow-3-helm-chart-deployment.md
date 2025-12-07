@@ -18,7 +18,8 @@ The chart is marked as experimental in the README, encouraging feedback via GitH
 ### Helm Chart Structure
 - **Chart.yaml**: Defines the chart's metadata, including name (`onlineboutique`), version (`0.10.4`), and type (`application`). No external dependencies.
 - **values.yaml**: Comprehensive configuration file with defaults for:
-  - Global settings: `images.repository`, service accounts creation/annotation, feature flags (e.g., `networkPolicies.create: false`, `opentelemetryCollector.create: false`).
+  - Global settings: `images.repository`, feature flags (e.g., `networkPolicies.create: false`, `opentelemetryCollector.create: false`).
+  - Service Accounts: `create: true` to enable ServiceAccount creation, `annotations: {}` for adding labels/annotations (e.g., Workload Identity), `imagePullSecrets: []` (override) for specifying secrets to pull images from private registries.
   - Per-service configs: Resource requests/limits for each microservice (e.g., `adService.resources.requests.cpu: 200m`), enable/disable flags (`create: true`).
   - Database: `cartDatabase.type: redis` (default in-cluster Redis) or `spanner` with connection string and IAM annotations.
   - Frontend-specific: `externalService: true` for LoadBalancer exposure, `virtualService.create: false` for Istio, branding/platform options.
@@ -38,7 +39,7 @@ The chart is marked as experimental in the README, encouraging feedback via GitH
   - NetworkPolicies per service if enabled.
   - Istio AuthorizationPolicies.
   - Sidecars (e.g., for TLS origination to external Redis).
-  - ServiceAccounts with annotations (e.g., for GCP Workload Identity).
+  - ServiceAccounts with annotations (e.g., for GCP Workload Identity) and optional `imagePullSecrets` for pulling images from private registries.
 - **Integration Points**: Supports external databases, custom images (e.g., from Artifact Registry), and Istio gateways.
 
 ## Sequence Diagrams
@@ -55,26 +56,26 @@ sequenceDiagram
     U->>H: helm upgrade --install [options] [values overrides]
     H->>H: Load chart from OCI registry or local path
     H->>H: Merge default values.yaml with user overrides
-    H->>H: Render templates (e.g., service Deployments, conditional policies)
+    H->>H: Render templates (e.g., service Deployments, ServiceAccounts with optional imagePullSecrets, conditional policies)
     H->>S: Apply rendered YAMLs (e.g., Deployments, Services, Redis if enabled)
     S->>R: Create/Update Kubernetes objects
     S->>R: Schedule Pods, pull images, run init containers if needed
-    Note over R: Microservices start; gRPC health checks; inter-service communication begins
-    R->>S: Pods become ready; Services get endpoints
+    Note over R: Microservices start, gRPC health checks, inter-service communication begins
+    R->>S: Pods become ready, Services get endpoints
     S->>H: Confirmation of resource creation
-    H->>U: Helm release status (success/failure); NOTES for frontend access
+    H->>U: Helm release status (success/failure), NOTES for frontend access
 ```
 
 ### Component Creation Flowchart
-This flowchart shows decision points based on values.yaml flags during template rendering and deployment.
+This flowchart shows decision points based on values.yaml flags during template rendering and deployment, including `serviceAccounts.imagePullSecrets` for enabling private image registry access.
 
 ```mermaid
 flowchart TD
     Start[User runs helm install/upgrade with values] --> Load[Load Chart.yaml, values.yaml, templates/]
-    Load --> CheckFlags[Evaluate feature flags e.g. networkPolicies.create, cartDatabase.type]
+    Load --> CheckFlags[Evaluate feature flags e.g. networkPolicies.create, cartDatabase.type, serviceAccounts.imagePullSecrets]
     CheckFlags -->|redis| CreateRedis[Create in-cluster Redis StatefulSet/Service]
     CheckFlags -->|spanner| ConfigSpanner[Set env vars & annotations for Spanner connection]
-    CheckFlags --> RenderServices[Render per-service templates:<br/>Deployments, Services, Probes, Resources]
+    CheckFlags --> RenderServices[Render per-service templates:<br/>Deployments, Services, Probes, Resources,<br/>ServiceAccounts with optional imagePullSecrets]
     RenderServices -->|flags enabled| AddPolicies[Add NetworkPolicies, AuthPolicies, Sidecars]
     RenderServices --> AddOTEL[Add OTEL Collector if create: true]
     AddPolicies --> Apply[Apply all rendered resources to K8s API]
@@ -96,6 +97,7 @@ flowchart TD
 - **Service Mesh Integration**: Enable `authorizationPolicies.create=true`, `frontend.virtualService.create=true` with Istio gateway details.
 - **Observability**: Set `opentelemetryCollector.create=true`, `googleCloudOperations.tracing=true` for metrics/traces export to Cloud Operations.
 - **Security**: Enable `networkPolicies.create=true` for fine-grained traffic control; `seccompProfile.enable=true` for pod security.
+- **Private Registry Support**: Create a `kubernetes.io/dockerconfigjson` secret with registry credentials in the target namespace, then set `serviceAccounts.imagePullSecrets: - name: <secret-name>` in custom values.yaml or via `--set` to include it in all service accounts, allowing pods to authenticate and pull images from private registries.
 
 ### Flow of Information in Application
 Once deployed, information flows as per the system architecture (see project-overview.md):
