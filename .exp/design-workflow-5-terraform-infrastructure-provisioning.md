@@ -131,3 +131,56 @@ sequenceDiagram
 - **Apply Time**: ~10 minutes due to cluster provisioning and pod rollout.
 
 This workflow bridges infrastructure provisioning with application deployment, leveraging Terraform's declarative model and Kustomize's customization for a flexible, GCP-optimized setup for the Online Boutique demo.
+
+## CI/CD and Production Cluster Provisioning Variant
+
+In addition to the primary user-provisioned setup, the project uses a dedicated Terraform configuration at `.github/terraform/` to manage GKE clusters for CI/CD (PR staging deployments) and production environments. This setup was initially introduced for staging in [PR #2418](https://github.com/GoogleCloudPlatform/microservices-demo/pull/2418) and extended for production in [PR #2615](https://github.com/GoogleCloudPlatform/microservices-demo/pull/2615).
+
+### Key Features and Differences
+- **Target Environment**: Manages infrastructure in the internal GCP project `online-boutique-ci`.
+- **Clusters Provisioned**: 
+  - `prs-gke-cluster`: Autopilot GKE for pull request staging deployments.
+  - `production-gke-cluster` (added in PR #2615): Autopilot GKE for production Online Boutique deployment.
+- **Additional Resources** (added in PR #2615):
+  - `production-frontend-ip-address`: Static external global IP address for stable frontend access via DNS (cymbal-shops.retail.cymbal.dev).
+- **State Management**: Remote backend using GCS bucket `cicd-terraform-state`.
+- **Security**: Dedicated service account `gke-clusters-service-account` with least-privilege IAM roles for logging and monitoring.
+- **No Application Deployment**: Focuses solely on infrastructure; application deployment to production is handled separately using manifests in `.github/release-cluster/`.
+- **Usage**: See `.github/terraform/README.md` for instructions on initializing, planning, and applying changes. Requires access to the CI GCP project.
+
+This variant ensures consistent, version-controlled management of operational clusters supporting CI/CD and release workflows, aligning with IaC best practices.
+
+### Sequence Diagram for CI/Production Variant
+
+```mermaid
+sequenceDiagram
+    participant U as Maintainer/CI
+    participant T as "Terraform (.github/terraform/)"
+    participant G as "GCP APIs"
+    participant B as "GCS Bucket"
+    participant SA as "Service Account"
+    participant C1 as "PR Staging Cluster"
+    participant C2 as "Production Cluster added in PR 2615"
+    participant IP as "Static IP added in PR 2615"
+
+    U->>T: terraform init && apply -var project_id=online-boutique-ci
+    activate T
+    Note over T: Uses GCS backend for state
+    T->>G: Enable APIs (container iam storage etc)
+    G->>T: APIs enabled
+    T->>B: Create or use cicd-terraform-state bucket
+    B->>T: Bucket ready
+    T->>SA: Create gke-clusters-service-account
+    SA->>T: SA created
+    T->>G: Bind IAM roles to SA (logging monitoring)
+    G->>T: Roles bound
+    T->>C1: Create prs-gke-cluster
+    C1->>T: Cluster ready
+    T->>C2: Create production-gke-cluster
+    C2->>T: Cluster ready
+    T->>IP: Create production-frontend-ip-address using google-beta
+    IP->>T: IP reserved
+    deactivate T
+    Note over U: No app deployment in this Terraform - separate step
+    Note over C2,IP: Used for production deployment via .github/release-cluster
+```
