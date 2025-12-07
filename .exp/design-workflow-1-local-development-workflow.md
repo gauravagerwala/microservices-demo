@@ -77,6 +77,7 @@ During development, Skaffold monitors file changes in build contexts. Upon detec
 ## Additional High-Level Design Aspects
 
 ### Build Process Details
+- **.NET Services (cartservice)**: Uses `dotnet publish` in Dockerfile with multi-stage build; depends on grpc.tools for protobuf compilation. To ensure ARM64 compatibility, use Grpc.AspNetCore and Grpc.HealthCheck versions <=2.67.0 (e.g., PR #3068 downgraded from 2.71.0 to fix protoc exit code 139 on linux_arm64).
 - **Platforms**: Supports `linux/amd64` and `linux/arm64` for multi-arch builds.
 - **Local Build**: Uses `local` builder with `useDockerCLI: true` and `useBuildkit: true` for fast, cached builds without pushing to a registry.
 - **Dependencies**: Some services require proto generation (via `genproto.sh` scripts); generated files (e.g., `demo.pb.go`) are included in source trees and built into images. Changes to `.proto` files may require manual regeneration before rebuild.
