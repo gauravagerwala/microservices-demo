@@ -32,7 +32,8 @@ The chart is marked as experimental in the README, encouraging feedback via GitH
 - **README.md**: Provides basic and advanced installation examples, links to blog posts on advanced scenarios (e.g., Spanner integration, gRPC health probes).
 
 ### Deployed Resources
-- **Core**: Deployments and Services for 11 microservices (adService, cartService, etc.) + loadGenerator.
+- **Core**: Deployments and Services for all microservices (adService, cartService, ..., shoppingAssistantService) + loadGenerator.
+- **ShoppingAssistantService**: Deployment and Service for the AI-powered shopping assistant that provides product recommendations and assistance.
 - **Optional**:
   - In-cluster Redis StatefulSet if `cartDatabase.inClusterRedis.create: true`.
   - NetworkPolicies per service if enabled.
@@ -59,10 +60,10 @@ sequenceDiagram
     H->>S: Apply rendered YAMLs (e.g., Deployments, Services, Redis if enabled)
     S->>R: Create/Update Kubernetes objects
     S->>R: Schedule Pods, pull images, run init containers if needed
-    Note over R: Microservices start; gRPC health checks; inter-service communication begins
-    R->>S: Pods become ready; Services get endpoints
+    Note over R: Microservices start. gRPC health checks. inter-service communication begins
+    R->>S: Pods become ready. Services get endpoints
     S->>H: Confirmation of resource creation
-    H->>U: Helm release status (success/failure); NOTES for frontend access
+    H->>U: Helm release status (success/failure). NOTES for frontend access
 ```
 
 ### Component Creation Flowchart
@@ -74,9 +75,11 @@ flowchart TD
     Load --> CheckFlags[Evaluate feature flags e.g. networkPolicies.create, cartDatabase.type]
     CheckFlags -->|redis| CreateRedis[Create in-cluster Redis StatefulSet/Service]
     CheckFlags -->|spanner| ConfigSpanner[Set env vars & annotations for Spanner connection]
-    CheckFlags --> RenderServices[Render per-service templates:<br/>Deployments, Services, Probes, Resources]
-    RenderServices -->|flags enabled| AddPolicies[Add NetworkPolicies, AuthPolicies, Sidecars]
+    CheckFlags --> RenderServices[Render core per-service templates:<br/>Deployments, Services, Probes, Resources]
+    RenderServices --> RenderSAS[Render shoppingAssistantService template:<br/>Deployment, Service, if enabled]
+    RenderSAS -->|flags enabled| AddPolicies[Add NetworkPolicies, AuthPolicies, Sidecars]
     RenderServices --> AddOTEL[Add OTEL Collector if create: true]
+    RenderSAS --> AddOTEL
     AddPolicies --> Apply[Apply all rendered resources to K8s API]
     AddOTEL --> Apply
     CreateRedis --> Apply
@@ -114,7 +117,7 @@ Helm manages upgrades, rollouts, and hooks if defined (none explicit in current 
 
 ### Potential Enhancements
 - Add hooks for pre/post-install (e.g., DB migration).
-- Include shopping assistant service (currently missing in Helm).
+- Support for additional emerging services or advanced database integrations (e.g., AlloyDB).
 - Support more DB options (e.g., AlloyDB via values).
 - Validate OCI packaging for chart distribution.
 
