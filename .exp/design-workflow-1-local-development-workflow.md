@@ -45,7 +45,7 @@ sequenceDiagram
     S->>S: Load skaffold.yaml (artifacts, manifests)
     loop For each artifact
         S->>B: docker build -t <image>:<tag> src/<service>
-        B->>B: Build image from Dockerfile
+        B->>B: Build image from Dockerfile<br/>(e.g., for loadgenerator: pip install from requirements.txt incl. werkzeug>=3.1.4 post-PR #3171)
     end
     S->>K: kustomize build kubernetes-manifests/ | kubectl apply -f -
     K->>K: Create Deployments, Services, Pods
@@ -66,7 +66,7 @@ sequenceDiagram
     participant K as K8s Cluster
     Note over S: File change detected in watched dir (e.g., src/frontend)
     S->>B: Rebuild affected image(s)
-    B->>B: docker build -t <image>:new-tag
+    B->>B: docker build -t <image>:new-tag<br/>(e.g., if requirements.txt changed in src/loadgenerator, installs updated deps like werkzeug==3.1.4 per PR #3171)
     S->>K: kubectl apply updated manifests (with new image tag)
     K->>K: Rolling update pods with new image
     Note over Dev: Code changes reflected without manual intervention
