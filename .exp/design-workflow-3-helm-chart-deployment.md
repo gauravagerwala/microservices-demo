@@ -21,7 +21,7 @@ The chart is marked as experimental in the README, encouraging feedback via GitH
   - Global settings: `images.repository`, service accounts creation/annotation, feature flags (e.g., `networkPolicies.create: false`, `opentelemetryCollector.create: false`).
   - Per-service configs: Resource requests/limits for each microservice (e.g., `adService.resources.requests.cpu: 200m`), enable/disable flags (`create: true`).
   - Database: `cartDatabase.type: redis` (default in-cluster Redis) or `spanner` with connection string and IAM annotations.
-  - Frontend-specific: `externalService: true` for LoadBalancer exposure, `virtualService.create: false` for Istio, branding/platform options.
+  - Frontend-specific: `externalService.create` (default true) for creating LoadBalancer Service with optional `externalService.annotations` map for custom metadata (e.g., external-dns integration for automatic DNS management), `virtualService.create: false` for Istio, branding (`cymbalBranding`), platform options.
   - Observability: Flags for Google Cloud Operations (tracing, metrics, profiler) and OTEL collector.
   - Security: `seccompProfile.enable: false`, `securityContext.enable: true`.
 - **templates/** Directory:
@@ -34,6 +34,7 @@ The chart is marked as experimental in the README, encouraging feedback via GitH
 ### Deployed Resources
 - **Core**: Deployments and Services for 11 microservices (adService, cartService, etc.) + loadGenerator.
 - **Optional**:
+  - Frontend-external LoadBalancer Service if `frontend.externalService.create: true`, supporting custom annotations (e.g., for external-dns).
   - In-cluster Redis StatefulSet if `cartDatabase.inClusterRedis.create: true`.
   - NetworkPolicies per service if enabled.
   - Istio AuthorizationPolicies.
@@ -55,14 +56,14 @@ sequenceDiagram
     U->>H: helm upgrade --install [options] [values overrides]
     H->>H: Load chart from OCI registry or local path
     H->>H: Merge default values.yaml with user overrides
-    H->>H: Render templates (e.g., service Deployments, conditional policies)
+    H->>H: Render templates (e.g., service Deployments, conditional policies and annotations)
     H->>S: Apply rendered YAMLs (e.g., Deployments, Services, Redis if enabled)
     S->>R: Create/Update Kubernetes objects
     S->>R: Schedule Pods, pull images, run init containers if needed
-    Note over R: Microservices start; gRPC health checks; inter-service communication begins
-    R->>S: Pods become ready; Services get endpoints
+    Note over R: Microservices start up, perform gRPC health checks, and begin inter-service communication
+    R->>S: Pods become ready and Services get endpoints
     S->>H: Confirmation of resource creation
-    H->>U: Helm release status (success/failure); NOTES for frontend access
+    H->>U: Helm release status (success or failure) and NOTES for frontend access
 ```
 
 ### Component Creation Flowchart
@@ -74,7 +75,7 @@ flowchart TD
     Load --> CheckFlags[Evaluate feature flags e.g. networkPolicies.create, cartDatabase.type]
     CheckFlags -->|redis| CreateRedis[Create in-cluster Redis StatefulSet/Service]
     CheckFlags -->|spanner| ConfigSpanner[Set env vars & annotations for Spanner connection]
-    CheckFlags --> RenderServices[Render per-service templates:<br/>Deployments, Services, Probes, Resources]
+    CheckFlags --> RenderServices[Render per-service templates:<br/>Deployments, Services, Probes, Resources, conditional annotations on external services]
     RenderServices -->|flags enabled| AddPolicies[Add NetworkPolicies, AuthPolicies, Sidecars]
     RenderServices --> AddOTEL[Add OTEL Collector if create: true]
     AddPolicies --> Apply[Apply all rendered resources to K8s API]
@@ -95,6 +96,7 @@ flowchart TD
 - **Advanced with Spanner**: Set `cartservice.database.type=spanner`, provide `connectionString`, enable `serviceAccounts.create=true` with GCP IAM annotations for least-privilege access.
 - **Service Mesh Integration**: Enable `authorizationPolicies.create=true`, `frontend.virtualService.create=true` with Istio gateway details.
 - **Observability**: Set `opentelemetryCollector.create=true`, `googleCloudOperations.tracing=true` for metrics/traces export to Cloud Operations.
+- **External DNS Management**: Configure `frontend.externalService.annotations` to add custom annotations for tools like external-dns, e.g., `--set 'frontend.externalService.annotations.external-dns\.alpha\.kubernetes\.io/hostname=onlineboutique.example.com'` for automatic DNS record creation based on LoadBalancer IP.
 - **Security**: Enable `networkPolicies.create=true` for fine-grained traffic control; `seccompProfile.enable=true` for pod security.
 
 ### Flow of Information in Application
