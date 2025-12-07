@@ -23,7 +23,7 @@ The workflow is initiated by running `skaffold dev` from the project root. Acces
   
 - **Dockerfiles**: Service-specific Dockerfiles in `src/<service>/Dockerfile` (e.g., multi-stage Go builds for Go services, Node.js for JS services). Skaffold builds these locally using Docker CLI and Buildkit for efficiency.
 
-- **Kubernetes Manifests**: YAML files in `kubernetes-manifests/` defining Deployments, Services, Pods, etc., for all 11 microservices, Redis (cart store), and loadgenerator. Image references (e.g., `image: frontend`) are updated by Skaffold with generated tags.
+- **Kubernetes Manifests**: YAML files in `kubernetes-manifests/` defining Deployments, Services, Pods, etc., for all 11 microservices, Redis (cart store), and loadgenerator. Image references (e.g., `image: frontend`) are updated by Skaffold with generated tags. Resource requests and limits in Deployments are tuned based on observed maximum usage plus buffer for efficiency, as updated in [PR #2540](https://github.com/GoogleCloudPlatform/microservices-demo/pull/2540).
 
 - **Kustomize**: Used by Skaffold to build manifests, allowing bases and patches (e.g., via profiles adding components like network policies).
 

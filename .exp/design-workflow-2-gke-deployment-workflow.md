@@ -20,7 +20,7 @@ Post-deployment, the frontend is accessible via the external IP of the `frontend
 - **Dockerfiles**: Service-specific in `src/<service>/`, e.g., multi-stage builds for Java (adservice), Go (frontend), Node.js (currencyservice), etc.
 - **Container Registry**: Stores built images; specified via `--default-repo` (e.g., `us-docker.pkg.dev/PROJECT_ID/microservices-demo`).
 - **Kustomize**: Renders manifests from `kubernetes-manifests/`, allowing patches for image tags and optional components (e.g., Redis, Istio commented out).
-- **Kubernetes Resources**: Deployments, Services, ConfigMaps, etc., for 10+ microservices plus Redis. LoadGenerator deployed separately via Skaffold module.
+- **Kubernetes Resources**: Deployments, Services, ConfigMaps, etc., for 10+ microservices plus Redis. LoadGenerator deployed separately via Skaffold module. These are rendered from `kubernetes-manifests/` with resource requests tuned based on actual usage [PR #2540](https://github.com/GoogleCloudPlatform/microservices-demo/pull/2540).
 - **GKE and Tools**: GKE cluster as runtime; `gcloud` for auth/credentials; `kubectl` for apply.
 - **Cloud Build**: Optional CI/CD; uses `cloudbuild.yaml` to run Skaffold in a containerized builder, specifying cluster details via substitutions.
 
