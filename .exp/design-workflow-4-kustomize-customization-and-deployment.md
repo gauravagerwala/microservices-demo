@@ -17,7 +17,7 @@ The design supports extensibility: new components can be added following Kustomi
 
 ### Base Layer
 - **Location**: `kustomize/base/`
-- **Contents**: Individual YAML files for each microservice (e.g., `frontend.yaml`, `cartservice.yaml`) defining Deployments, Services, ConfigMaps, etc. The `base/kustomization.yaml` aggregates these as resources.
+- **Contents**: Individual YAML files for each microservice (e.g., `frontend.yaml`, `cartservice.yaml`) defining Deployments, Services, ConfigMaps, etc. The `base/kustomization.yaml` aggregates these as resources. These base files are synced from `kubernetes-manifests/` during releases, including recent optimizations to resource requests based on usage data [PR #2540](https://github.com/GoogleCloudPlatform/microservices-demo/pull/2540).
 - **Role**: Provides the default, vanilla deployment of Online Boutique services, including in-cluster Redis for carts and public frontend exposure.
 
 ### Top-Level Configuration
