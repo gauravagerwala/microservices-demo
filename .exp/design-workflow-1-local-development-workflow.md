@@ -29,7 +29,7 @@ The workflow is initiated by running `skaffold dev` from the project root. Acces
 
 - **Local Kubernetes Cluster**: Runs the deployed pods and services. Internal gRPC communication between services occurs over cluster networking.
 
-- **Profiles and Patches**: Skaffold profiles enable modes like `debug` (swaps cartservice Dockerfile for debugging) or `network-policies` (adds Kustomize overlays).
+- **Profiles and Patches**: Skaffold profiles enable modes like `debug` (patches build configs for multi-service debugging including cartservice `Dockerfile.debug` swap and `SKAFFOLD_PY_DEBUG=true` arg for Python services emailservice, recommendationservice, loadgenerator to install debugpy) or `network-policies` (adds Kustomize overlays).
 
 - **Tag Policy**: `gitCommit` policy tags images with Git commit SHA for versioning.
 
@@ -41,18 +41,24 @@ sequenceDiagram
     participant S as Skaffold
     participant B as Docker Build
     participant K as K8s Cluster
-    D->>S: skaffold dev
-    S->>S: Load skaffold.yaml (artifacts, manifests)
+    D->>S: skaffold dev or debug
+    S->>S: Load skaffold.yaml (artifacts, manifests, activate profiles if debug)
     loop For each artifact
-        S->>B: docker build -t <image>:<tag> src/<service>
-        B->>B: Build image from Dockerfile
+        alt Debug profile active
+            S->>B: docker build with debug patches (e.g., debugpy arg, special Dockerfile)
+            B->>B: Build image including debugging tools (debugpy for Python, .NET debug for cartservice)
+        else Standard dev
+            S->>B: docker build -t <image>:<tag> src/<service>
+            B->>B: Build image from standard Dockerfile
+        end
     end
     S->>K: kustomize build kubernetes-manifests/ | kubectl apply -f -
     K->>K: Create Deployments, Services, Pods
-    Note over S,K: Pods pull local images and start
+    Note over S,K: Pods pull local images and start (debug-enabled if applicable)
     D->>K: kubectl port-forward svc/frontend 8080:8080
-    Note over D: Access app at http://localhost:8080
+    Note over D: Access app at http://localhost:8080; attach debugger to pods if debug mode
 ```
+
 
 This diagram illustrates the startup sequence: Skaffold builds all service images in parallel loops, deploys the cluster resources, and enables local access.
 
@@ -90,7 +96,11 @@ During development, Skaffold monitors file changes in build contexts. Upon detec
 
 ### Customization and Extensions
 - **Profiles**: 
-  - `debug`: Patches cartservice to use `Dockerfile.debug` for .NET debugging support.
+  - `debug`: Provides debugging support via artifact patches activated by `skaffold debug`:
+    - cartservice: Uses `Dockerfile.debug` for .NET debugging (fixed override).
+    - emailservice, recommendationservice: Adds build arg `SKAFFOLD_PY_DEBUG=true` to install `debugpy` in Python runtime.
+    - loadgenerator: Dedicated profile adds build arg for `debugpy` support.
+    Extends prior cartservice-only functionality to prevent Python service failures in debug mode.
   - `network-policies`: Adds Kustomize path to include network policy manifests.
   - Can combine profiles, e.g., `skaffold dev -p network-policies,debug`.
 - **Integration**: Compatible with IDEs for remote debugging. For service mesh (Istio), use additional Kustomize components or profiles.

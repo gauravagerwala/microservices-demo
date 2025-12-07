@@ -82,7 +82,7 @@ sequenceDiagram
 - For Cloud Build: Service account with Kubernetes Engine Developer role; substitutions for `_ZONE` and `_CLUSTER`.
 
 ### Customization and Extensibility
-- **Profiles in Skaffold**: Activate via `-p <profile>`, e.g., `-p gcb` for remote builds, `-p network-policies` to patch manifests with additional Kustomize paths.
+- **Profiles in Skaffold**: Activate via `-p <profile>`, e.g., `-p gcb` for remote builds using Google Cloud Build, `-p debug` to enable service debugging (adds debugpy to Python images, special Dockerfile for cartservice), `-p network-policies` to patch manifests with additional Kustomize paths.
 - **Kustomize Overlays**: Uncomment or add components in `kubernetes-manifests/kustomization.yaml` for features like service mesh (Istio), alternative databases (AlloyDB/Spanner), or observability (Cloud Operations).
 - **Image Tagging**: Git commit-based for traceability; customizable via `tagPolicy` in `skaffold.yaml`.
 - **Load Generator**: Separate Skaffold config (`loadgenerator`) requiring `app`; deploys `loadgenerator.yaml` manifest.
